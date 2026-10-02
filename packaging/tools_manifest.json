@@ -1,0 +1,73 @@
+{
+  "windows_x64": {
+    "sources": [
+      {
+        "label": "FFmpeg 9.0.1 essentials (gyan.dev build)",
+        "url": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.1/ffmpeg-9.0.1-essentials_build.zip",
+        "sha256": "fec81ae03971d9dd4be3ebe02e263bd2ec1d789483f931bdba5f5715e65da2e9",
+        "members": {
+            "ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe": "ffmpeg.exe",
+            "ffmpeg-9.0.1-essentials_build/bin/ffprobe.exe": "ffprobe.exe",
+            "ffmpeg-9.0.1-essentials_build/LICENSE": "licenses/FFmpeg-LICENSE.txt"
+        }
+      },
+      {
+        "label": "Deno v2.9.6 x86_64-pc-windows-msvc",
+        "url": "https://github.com/denoland/deno/releases/download/v2.9.6/deno-x86_64-pc-windows-msvc.zip",
+        "sha256": "15e5300b0ba3c3695a7621d90160a746ec9e710228cee639afa9d580f6e3cd11",
+        "members": {"deno.exe": "deno.exe"}
+      },
+      {
+        "label": "Deno v2.9.6 licence",
+        "url": "https://raw.githubusercontent.com/denoland/deno/v2.9.6/LICENSE.md",
+        "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588",
+        "target": "licenses/Deno-LICENSE.md"
+      }
+    ],
+    "staged": {
+      "ffmpeg.exe": "72a489eccd008c2ec2c0a5856c5c75bc3d8bbfa90166c4566865c246445e6aa3",
+      "ffprobe.exe": "19202b23c0043f15ad1b7bce2344f406fd52bd6efd8f995ce02e7392a1cec52f",
+      "deno.exe": "2ff9493dfa356be2975f477025ea770088e9e9cb2c83d983236d13561b96b7a6",
+      "licenses/FFmpeg-LICENSE.txt": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "licenses/Deno-LICENSE.md": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+    }
+  },
+  "macos_arm64": {
+    "sources": [
+      {
+        "label": "FFmpeg 7.1 macOS arm64 (evermeet.cx)",
+        "url": "https://evermeet.cx/ffmpeg/ffmpeg-7.1.zip",
+        "sha256": "5a1303c7babaffff3c32c141ff49c7f44bd3b3b3e7dcea992fd7d04b6558ef43",
+        "members": {
+            "ffmpeg": "ffmpeg"
+        }
+      },
+      {
+        "label": "FFprobe 7.1 macOS arm64 (evermeet.cx)",
+        "url": "https://evermeet.cx/ffmpeg/ffprobe-7.1.zip",
+        "sha256": "fc289c963346d7dc0891cbaed02ba270e8abec54df9259e22d59559018b25709",
+        "members": {
+            "ffprobe": "ffprobe"
+        }
+      },
+      {
+        "label": "Deno v2.9.6 aarch64-apple-darwin",
+        "url": "https://github.com/denoland/deno/releases/download/v2.9.6/deno-aarch64-apple-darwin.zip",
+        "sha256": "213a2f304f04d3c9cb5220669afad138f60a5aab1fe80962abdeb8f35807a472",
+        "members": {"deno": "deno"}
+      },
+      {
+        "label": "Deno v2.9.6 licence",
+        "url": "https://raw.githubusercontent.com/denoland/deno/v2.9.6/LICENSE.md",
+        "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588",
+        "target": "licenses/Deno-LICENSE.md"
+      }
+    ],
+    "staged": {
+      "ffmpeg": "31b54ce40088787bc967d9938863a28a6bed0fdf54c42f51f04e1e178b35d536",
+      "ffprobe": "63910b412203b41fed26b8c515c15fd2fefb4fc8eed54ea9521031c385e39df1",
+      "deno": "b3ac3bd206e48c26026cadd80c1367e96c149f9c66130952382a642b09fa8a71",
+      "licenses/Deno-LICENSE.md": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
+    }
+  }
+}

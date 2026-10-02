@@ -31,58 +31,51 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import json
+
 PROJECT = Path(__file__).resolve().parents[1]
 DEFAULT_DEST = PROJECT / "tools"
-
-FFMPEG_DIR = "ffmpeg-9.0.1-essentials_build"
-
 
 @dataclass(frozen=True)
 class Source:
     """One pinned download: archive ``members`` -> staged paths, or the whole file -> ``target``."""
-
     label: str
     url: str
     sha256: str
     members: dict[str, str] = field(default_factory=dict)
     target: str = ""
 
+def load_manifest(platform: str) -> tuple[tuple[Source, ...], dict[str, str], tuple[str, ...]]:
+    manifest_path = PROJECT / "packaging" / "tools_manifest.json"
+    with manifest_path.open(encoding="utf-8") as f:
+        manifest = json.load(f)
+    if platform not in manifest:
+        raise ToolError(f"Unknown platform: {platform}")
+    
+    plat_data = manifest[platform]
+    sources = []
+    for s in plat_data["sources"]:
+        sources.append(Source(
+            label=s["label"],
+            url=s["url"],
+            sha256=s["sha256"],
+            members=s.get("members", {}),
+            target=s.get("target", "")
+        ))
+    staged = plat_data["staged"]
+    
+    executables = []
+    for name in staged:
+        if name in ("ffmpeg.exe", "ffprobe.exe", "deno.exe", "ffmpeg", "ffprobe", "deno"):
+            executables.append(name)
+            
+    return tuple(sources), staged, tuple(executables)
 
-SOURCES: tuple[Source, ...] = (
-    Source(
-        label="FFmpeg 9.0.1 essentials (gyan.dev build)",
-        url="https://github.com/GyanD/codexffmpeg/releases/download/9.0.1/ffmpeg-9.0.1-essentials_build.zip",
-        sha256="fec81ae03971d9dd4be3ebe02e263bd2ec1d789483f931bdba5f5715e65da2e9",
-        members={
-            f"{FFMPEG_DIR}/bin/ffmpeg.exe": "ffmpeg.exe",
-            f"{FFMPEG_DIR}/bin/ffprobe.exe": "ffprobe.exe",
-            f"{FFMPEG_DIR}/LICENSE": "licenses/FFmpeg-LICENSE.txt",
-        },
-    ),
-    Source(
-        label="Deno v2.9.6 x86_64-pc-windows-msvc",
-        url="https://github.com/denoland/deno/releases/download/v2.9.6/deno-x86_64-pc-windows-msvc.zip",
-        sha256="15e5300b0ba3c3695a7621d90160a746ec9e710228cee639afa9d580f6e3cd11",
-        members={"deno.exe": "deno.exe"},
-    ),
-    Source(
-        label="Deno v2.9.6 licence",
-        url="https://raw.githubusercontent.com/denoland/deno/v2.9.6/LICENSE.md",
-        sha256="f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588",
-        target="licenses/Deno-LICENSE.md",
-    ),
-)
+# These will be initialized based on platform arguments
+SOURCES: tuple[Source, ...] = ()
+STAGED: dict[str, str] = {}
+EXECUTABLES: tuple[str, ...] = ()
 
-# Every file a build may receive, and its SHA-256. Paths are relative to the tools folder.
-STAGED: dict[str, str] = {
-    "ffmpeg.exe": "72a489eccd008c2ec2c0a5856c5c75bc3d8bbfa90166c4566865c246445e6aa3",
-    "ffprobe.exe": "19202b23c0043f15ad1b7bce2344f406fd52bd6efd8f995ce02e7392a1cec52f",
-    "deno.exe": "2ff9493dfa356be2975f477025ea770088e9e9cb2c83d983236d13561b96b7a6",
-    "licenses/FFmpeg-LICENSE.txt": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",  # noqa: E501
-    "licenses/Deno-LICENSE.md": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588",
-}
-
-EXECUTABLES = ("ffmpeg.exe", "ffprobe.exe", "deno.exe")
 
 
 class ToolError(Exception):
@@ -202,8 +195,17 @@ def fetch(dest: Path) -> list[Path]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dest", type=Path, default=DEFAULT_DEST)
+    parser.add_argument("--platform", default="windows_x64", help="Platform to fetch tools for")
     parser.add_argument("command", choices=["fetch", "verify"])
     args = parser.parse_args(argv)
+    
+    global SOURCES, STAGED, EXECUTABLES
+    try:
+        SOURCES, STAGED, EXECUTABLES = load_manifest(args.platform)
+    except ToolError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
     try:
         paths = fetch(args.dest) if args.command == "fetch" else verify_staged(args.dest)
     except (ToolError, OSError) as exc:

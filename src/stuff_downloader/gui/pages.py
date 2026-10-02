@@ -95,6 +95,8 @@ from .widgets import (
     section_title,
 )
 
+MOD = "Cmd" if sys.platform == "darwin" else "Ctrl"
+
 # "Clear done ▾" (plan §5.8): what each choice removes from the queue. History keeps all.
 CLEAR_CHOICES = (
     ("finished", "Finished"),
@@ -708,7 +710,7 @@ class DownloadsPage(QWidget):
         )
         self.url_edit.setClearButtonEnabled(True)
         self.paste_button = QPushButton("Paste")
-        self.paste_button.setToolTip("Paste a link from the clipboard")
+        self.paste_button.setToolTip(f"Paste a link from the clipboard ({MOD}+V)")
         self.analyze_button = QPushButton("🔍  Analyze")
         self.analyze_button.setObjectName("primary")
         self.analyze_button.setDefault(True)
