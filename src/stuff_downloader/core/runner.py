@@ -53,7 +53,12 @@ def runtime_root() -> Path:
     override = os.environ.get(RUNTIME_ENV_VAR)
     if override:
         return Path(override)
-    base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    elif sys.platform == "darwin":
+        base = str(Path.home() / "Library" / "Application Support")
+    else:
+        base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
     return Path(base) / "StuffDownloader" / "runtime"
 
 
@@ -73,9 +78,15 @@ def runtime_python(engine: str = "fake") -> Path:
     """Interpreter for one engine: its active env, else the base runtime. Never the GUI exe."""
     root = runtime_root()
     env_id = _active_env(root, engine)
+    if sys.platform == "win32":
+        scripts = "Scripts"
+        python_bin = "python.exe"
+    else:
+        scripts = "bin"
+        python_bin = "python3"
     if env_id:
-        return root / "envs" / engine / env_id / "Scripts" / "python.exe"
-    return root / "python" / "python.exe"
+        return root / "envs" / engine / env_id / scripts / python_bin
+    return root / "python" / python_bin
 
 
 DEV_ENGINES = frozenset({"fake", "probe"})

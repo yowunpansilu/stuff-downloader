@@ -58,13 +58,29 @@ def default_download_dir() -> Path:
 
 
 def config_dir() -> Path:
+    # APPDATA is used as a test override on all platforms (see conftest.py fixture)
     base = os.environ.get("APPDATA")
-    return (Path(base) if base else Path.home() / ".config") / APP_DIR_NAME
+    if base:
+        return Path(base) / APP_DIR_NAME
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / APP_DIR_NAME
+    if sys.platform != "win32":
+        xdg = os.environ.get("XDG_CONFIG_HOME")
+        return (Path(xdg) if xdg else Path.home() / ".config") / APP_DIR_NAME
+    return (Path.home() / "AppData" / "Roaming") / APP_DIR_NAME
 
 
 def data_dir() -> Path:
+    # LOCALAPPDATA is used as a test override on all platforms (see conftest.py fixture)
     base = os.environ.get("LOCALAPPDATA")
-    return (Path(base) if base else Path.home() / ".local" / "share") / APP_DIR_NAME
+    if base:
+        return Path(base) / APP_DIR_NAME
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / APP_DIR_NAME
+    if sys.platform != "win32":
+        xdg = os.environ.get("XDG_DATA_HOME")
+        return (Path(xdg) if xdg else Path.home() / ".local" / "share") / APP_DIR_NAME
+    return (Path.home() / "AppData" / "Local") / APP_DIR_NAME
 
 
 def temp_dir() -> Path:
