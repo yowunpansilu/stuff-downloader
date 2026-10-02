@@ -71,11 +71,15 @@ def load_manifest(platform: str) -> tuple[tuple[Source, ...], dict[str, str], tu
             
     return tuple(sources), staged, tuple(executables)
 
-# These will be initialized based on platform arguments
-SOURCES: tuple[Source, ...] = ()
-STAGED: dict[str, str] = {}
-EXECUTABLES: tuple[str, ...] = ()
-
+# Populated at import time with the default (windows_x64) platform so that
+# tests and the PyInstaller spec can import the module without calling main().
+# main() overwrites these with the requested platform.
+try:
+    SOURCES, STAGED, EXECUTABLES = load_manifest("windows_x64")
+except Exception:  # manifest missing or malformed during editable installs
+    SOURCES: tuple[Source, ...] = ()
+    STAGED: dict[str, str] = {}
+    EXECUTABLES: tuple[str, ...] = ()
 
 
 class ToolError(Exception):
