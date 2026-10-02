@@ -606,10 +606,13 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(QSize(760, 480))
         self.setStyleSheet(STYLE)
         self.app_settings = app_settings or settings.load()
+
         # This window owns the store it shares between the Downloads and History pages, and it
         # is the only thing that closes it — see DownloadsPage.owns_store.
         self.owns_store = store is None
         self.store = store if store is not None else history.Store()
+
+        self.check_first_time_setup()
 
         # Sidebar
         sidebar_panel = QWidget()
@@ -722,6 +725,45 @@ class MainWindow(QMainWindow):
             if self._startup_update_check:
                 # After the window has painted; startup never waits for PyPI.
                 QTimer.singleShot(1500, self.startup_update_check)
+
+    def check_first_time_setup(self) -> None:
+        import subprocess
+        import sys
+
+        from PyQt6.QtWidgets import QProgressDialog
+
+        root = runner.runtime_root()
+        if root.exists() and (root / "active.json").exists():
+            return
+
+        if not getattr(sys, "frozen", False):
+            return
+
+        if sys.platform == "darwin":
+            setup_dir = Path(sys.executable).parents[1] / "Resources" / "runtime-setup"
+        else:
+            setup_dir = Path(sys.executable).parent / "runtime-setup"
+
+        if not setup_dir.exists():
+            return
+
+        progress = QProgressDialog("Performing first-time setup. This may take a minute...", None, 0, 0, self)
+        progress.setWindowTitle("First Time Setup")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setCancelButton(None)
+        progress.show()
+
+        # Run setup synchronously for now to keep it simple, processEvents to keep UI alive
+        QGuiApplication.processEvents()
+
+        python_exe = setup_dir / "python" / ("python.exe" if sys.platform == "win32" else "bin/python3")
+        script = setup_dir / "packaging" / "build_installer.py"
+        try:
+            subprocess.run([str(python_exe), str(script), "setup-runtime"], check=True)
+        except subprocess.CalledProcessError as e:
+            log.error(f"First-time setup failed: {e}")
+
+        progress.close()
 
     # ── library updates ──────────────────────────────────────────────────────────────────
     def startup_update_check(self) -> bool:

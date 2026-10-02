@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import shutil
 import sys
@@ -30,8 +31,6 @@ import urllib.request
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
-
-import json
 
 PROJECT = Path(__file__).resolve().parents[1]
 DEFAULT_DEST = PROJECT / "tools"
@@ -51,7 +50,7 @@ def load_manifest(platform: str) -> tuple[tuple[Source, ...], dict[str, str], tu
         manifest = json.load(f)
     if platform not in manifest:
         raise ToolError(f"Unknown platform: {platform}")
-    
+
     plat_data = manifest[platform]
     sources = []
     for s in plat_data["sources"]:
@@ -63,12 +62,12 @@ def load_manifest(platform: str) -> tuple[tuple[Source, ...], dict[str, str], tu
             target=s.get("target", "")
         ))
     staged = plat_data["staged"]
-    
+
     executables = []
     for name in staged:
         if name in ("ffmpeg.exe", "ffprobe.exe", "deno.exe", "ffmpeg", "ffprobe", "deno"):
             executables.append(name)
-            
+
     return tuple(sources), staged, tuple(executables)
 
 # Populated at import time with the default (windows_x64) platform so that
@@ -202,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--platform", default="windows_x64", help="Platform to fetch tools for")
     parser.add_argument("command", choices=["fetch", "verify"])
     args = parser.parse_args(argv)
-    
+
     global SOURCES, STAGED, EXECUTABLES
     try:
         SOURCES, STAGED, EXECUTABLES = load_manifest(args.platform)

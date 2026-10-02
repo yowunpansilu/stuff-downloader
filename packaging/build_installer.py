@@ -217,6 +217,17 @@ def stage_python(setup: Path) -> None:
         raise PayloadError("the CPython archive held no python\\python.exe")
 
 
+def get_pip_platform() -> str:
+    import platform
+    os_name = sys.platform
+    arch = platform.machine()
+    if os_name == "win32":
+        return "win_amd64"
+    elif os_name == "darwin":
+        return "macosx_11_0_arm64" if arch == "arm64" else "macosx_10_9_x86_64"
+    else:
+        return "manylinux2014_x86_64"
+
 def download_wheels(wheels: Path) -> list[Path]:
     """Every pinned engine wheel for CPython 3.11 on win_amd64, hash-checked by pip."""
     cache = CACHE / "wheels"
@@ -226,7 +237,7 @@ def download_wheels(wheels: Path) -> list[Path]:
         subprocess.run(
             [
                 sys.executable, "-m", "pip", "download", "--require-hashes", "--no-deps",
-                "--only-binary", ":all:", "--platform", "win_amd64", "--python-version", "3.11",
+                "--only-binary", ":all:", "--platform", get_pip_platform(), "--python-version", "3.11",
                 "--implementation", "cp", "--no-input", "--disable-pip-version-check",
                 "-d", str(cache), "-r", str(REQS / name),
             ],

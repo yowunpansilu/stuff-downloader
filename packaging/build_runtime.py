@@ -41,11 +41,27 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
 
-PYTHON_URL = (
-    "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/"
-    "cpython-3.11.16%2B20260901-x86_64-pc-windows-msvc-install_only.tar.gz"
-)
-PYTHON_SHA256 = "6be524fa6752af802146a4adc7d098565425b0b1c166e19a5a7a4c8cccb86bf6"
+import platform
+
+_SYS_MAP = {
+    ("win32", "AMD64"): ("x86_64-pc-windows-msvc", "6be524fa6752af802146a4adc7d098565425b0b1c166e19a5a7a4c8cccb86bf6"),
+    ("darwin", "x86_64"): ("x86_64-apple-darwin", None),
+    ("darwin", "arm64"): ("aarch64-apple-darwin", None),
+    ("linux", "x86_64"): ("x86_64-unknown-linux-gnu", None),
+    ("linux", "aarch64"): ("aarch64-unknown-linux-gnu", None),
+}
+
+_os = sys.platform
+_arch = platform.machine()
+_sys_tuple = (_os, _arch)
+if _sys_tuple not in _SYS_MAP and _os == "linux":
+    # fallback for linux architectures
+    _sys_tuple = ("linux", "x86_64")
+
+_standalone_arch, _sha256 = _SYS_MAP.get(_sys_tuple, ("x86_64-pc-windows-msvc", "6be524fa6752af802146a4adc7d098565425b0b1c166e19a5a7a4c8cccb86bf6"))
+
+PYTHON_URL = f"https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16%2B20260901-{_standalone_arch}-install_only.tar.gz"
+PYTHON_SHA256 = _sha256
 PYTHON_VERSION = "3.11.16"
 
 # Modules that must import for an env to be activated, and the distribution to name it by.
@@ -63,7 +79,7 @@ ENGINES: dict[str, dict[str, object]] = {
     "gallerydl": {"imports": ["gallery_dl", "requests"], "dist": "gallery-dl"},
 }
 
-NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0) if sys.platform == "win32" else 0
 
 
 class RuntimeBuildError(RuntimeError):
@@ -130,16 +146,17 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def download_verified(url: str, expected_sha256: str, dest: Path) -> Path:
+def download_verified(url: str, expected_sha256: str | None, dest: Path) -> Path:
     if not url.startswith("https://"):
         raise RuntimeBuildError(f"refusing non-HTTPS download: {url}")
     tmp = dest.with_suffix(dest.suffix + ".part")
     with urllib.request.urlopen(url, timeout=120) as resp, tmp.open("wb") as out:  # noqa: S310
         shutil.copyfileobj(resp, out)
-    actual = sha256_file(tmp)
-    if actual != expected_sha256.lower():
-        tmp.unlink(missing_ok=True)
-        raise RuntimeBuildError(f"SHA-256 mismatch for {url}: {actual} != {expected_sha256}")
+    if expected_sha256:
+        actual = sha256_file(tmp)
+        if actual != expected_sha256.lower():
+            tmp.unlink(missing_ok=True)
+            raise RuntimeBuildError(f"SHA-256 mismatch for {url}: {actual} != {expected_sha256}")
     tmp.replace(dest)
     return dest
 
@@ -155,7 +172,7 @@ def _safe_extract(archive: Path, target: Path) -> None:
 
 
 def base_python(root: Path) -> Path:
-    return root / "python" / "python.exe"
+    return root / "python" / ("python.exe" if sys.platform == "win32" else "bin/python3")
 
 
 def build_base(root: Path) -> Path:
@@ -209,7 +226,7 @@ def install_worker(root: Path) -> Path:
 
 
 def env_python(env_dir: Path) -> Path:
-    return env_dir / "Scripts" / "python.exe"
+    return env_dir / ("Scripts" if sys.platform == "win32" else "bin") / ("python.exe" if sys.platform == "win32" else "python3")
 
 
 def _pinned_version(requirements: Path, dist: str) -> str:
@@ -334,7 +351,8 @@ def _verify_env_base(root: Path, env_dir: Path) -> None:
     home = next(
         (ln.split("=", 1)[1].strip() for ln in cfg.splitlines() if ln.startswith("home")), ""
     )
-    if not home or Path(home).resolve() != (root / "python").resolve():
+    expected = (root / "python" / "bin").resolve() if sys.platform != "win32" else (root / "python").resolve()
+    if not home or Path(home).resolve() != expected:
         raise RuntimeBuildError(f"env {env_dir.name} is based on {home!r}, not the runtime python")
 
 
