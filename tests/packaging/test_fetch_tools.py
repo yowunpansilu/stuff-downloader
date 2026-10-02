@@ -12,7 +12,12 @@ fetch_tools = importlib.util.module_from_spec(spec)
 sys.modules["fetch_tools"] = fetch_tools
 spec.loader.exec_module(fetch_tools)
 
-from fetch_tools import ToolError, _stage_path, load_manifest, sha256_file  # noqa: E402  # type: ignore[import]
+from fetch_tools import (  # noqa: E402  # type: ignore[import]
+    ToolError,
+    _stage_path,
+    load_manifest,
+    sha256_file,
+)
 
 
 def test_load_manifest_valid():
