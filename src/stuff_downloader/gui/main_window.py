@@ -747,7 +747,9 @@ class MainWindow(QMainWindow):
         if not setup_dir.exists():
             return
 
-        progress = QProgressDialog("Performing first-time setup. This may take a minute...", None, 0, 0, self)
+        progress = QProgressDialog(
+            "Performing first-time setup. This may take a minute...", None, 0, 0, self
+        )
         progress.setWindowTitle("First Time Setup")
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setCancelButton(None)
@@ -756,7 +758,8 @@ class MainWindow(QMainWindow):
         # Run setup synchronously for now to keep it simple, processEvents to keep UI alive
         QGuiApplication.processEvents()
 
-        python_exe = setup_dir / "python" / ("python.exe" if sys.platform == "win32" else "bin/python3")
+        bin_name = "python.exe" if sys.platform == "win32" else "bin/python3"
+        python_exe = setup_dir / "python" / bin_name
         script = setup_dir / "packaging" / "build_installer.py"
         try:
             subprocess.run([str(python_exe), str(script), "setup-runtime"], check=True)
