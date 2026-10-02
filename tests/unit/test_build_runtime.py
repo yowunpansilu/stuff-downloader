@@ -61,12 +61,14 @@ def test_archive_path_traversal_is_refused(br, tmp_path):
 
 
 def test_env_based_on_other_python_is_refused(br, tmp_path):
+    import sys
     env = tmp_path / "envs" / "ytdlp" / "x"
     env.mkdir(parents=True)
     (env / "pyvenv.cfg").write_text("home = C:\\Python311\n", encoding="utf-8")
     with pytest.raises(br.RuntimeBuildError):
         br._verify_env_base(tmp_path, env)
-    (env / "pyvenv.cfg").write_text(f"home = {tmp_path / 'python'}\n", encoding="utf-8")
+    home_path = tmp_path / "python" if sys.platform == "win32" else tmp_path / "python" / "bin"
+    (env / "pyvenv.cfg").write_text(f"home = {home_path}\n", encoding="utf-8")
     br._verify_env_base(tmp_path, env)
 
 
@@ -139,11 +141,17 @@ def _reqs(tmp_path: Path, version: str = "2026.9.1", body: str | None = None) ->
 
 
 def _fake_env(root: Path, engine: str, env_id: str) -> Path:
+    import sys
     env = root / "envs" / engine / env_id
-    python = env / "Scripts" / "python.exe"
+    if sys.platform == "win32":
+        python = env / "Scripts" / "python.exe"
+        home_path = root / "python"
+    else:
+        python = env / "bin" / "python3"
+        home_path = root / "python" / "bin"
     python.parent.mkdir(parents=True)
     python.write_bytes(b"")
-    (env / "pyvenv.cfg").write_text(f"home = {root / 'python'}\n", encoding="utf-8")
+    (env / "pyvenv.cfg").write_text(f"home = {home_path}\n", encoding="utf-8")
     return env
 
 
@@ -168,7 +176,12 @@ class FakeRuntime:
         self.fail: dict[str, set[str]] = {"pip": set(), "check": set(), "self-test": set()}
         self.fail_self_test_after_switch = False
         (root / "python").mkdir(parents=True, exist_ok=True)
-        (root / "python" / "python.exe").write_bytes(b"")
+        import sys
+        if sys.platform == "win32":
+            (root / "python" / "python.exe").write_bytes(b"")
+        else:
+            (root / "python" / "bin").mkdir(parents=True, exist_ok=True)
+            (root / "python" / "bin" / "python3").write_bytes(b"")
         worker = root / "app" / "stuff_downloader_worker"
         worker.mkdir(parents=True, exist_ok=True)
         (worker / "__main__.py").write_text("", encoding="utf-8")

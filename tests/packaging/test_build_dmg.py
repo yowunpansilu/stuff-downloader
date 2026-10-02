@@ -24,10 +24,11 @@ def test_dmg_version_parsing(tmp_path, monkeypatch):
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nversion = "9.9.9"\n')
 
-    # Mock run and subprocess.run
+    # Mock run and subprocess.run and shutil.copytree
     mock_run = MagicMock()
     monkeypatch.setattr(build_dmg, "run", mock_run)
     monkeypatch.setattr(subprocess, "run", MagicMock())
+    monkeypatch.setattr(build_dmg.shutil, "copytree", MagicMock())
 
     # Run main; fails at DMG hash because file doesn't exist
     with pytest.raises(FileNotFoundError):
@@ -42,4 +43,6 @@ def test_dmg_version_parsing(tmp_path, monkeypatch):
             break
 
     assert hdiutil_call is not None
-    assert str(tmp_path / "dist" / "StuffDownloader-9.9.9-macos-arm64.dmg") in hdiutil_call
+    import platform
+    arch = platform.machine()
+    assert str(tmp_path / "dist" / f"StuffDownloader-9.9.9-macos-{arch}.dmg") in hdiutil_call
