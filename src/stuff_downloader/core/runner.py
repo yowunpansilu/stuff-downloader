@@ -53,12 +53,17 @@ def runtime_root() -> Path:
     override = os.environ.get(RUNTIME_ENV_VAR)
     if override:
         return Path(override)
-    if sys.platform == "win32":
-        base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    # LOCALAPPDATA is used as a test override on all platforms (see conftest.py fixture)
+    base = os.environ.get("LOCALAPPDATA")
+    if base:
+        pass
+    elif sys.platform == "win32":
+        base = str(Path.home() / "AppData" / "Local")
     elif sys.platform == "darwin":
         base = str(Path.home() / "Library" / "Application Support")
     else:
-        base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+        xdg = os.environ.get("XDG_DATA_HOME")
+        base = xdg if xdg else str(Path.home() / ".local" / "share")
     return Path(base) / "StuffDownloader" / "runtime"
 
 
@@ -86,7 +91,15 @@ def runtime_python(engine: str = "fake") -> Path:
         python_bin = "python3"
     if env_id:
         return root / "envs" / engine / env_id / scripts / python_bin
-    return root / "python" / python_bin
+
+    bundled = root / "python" / python_bin
+    if sys.platform != "win32" and not bundled.is_file():
+        import shutil
+        for name in ("python3.11", "python3"):
+            found = shutil.which(name)
+            if found:
+                return Path(found)
+    return bundled
 
 
 DEV_ENGINES = frozenset({"fake", "probe"})

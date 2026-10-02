@@ -104,7 +104,9 @@ def test_corrupt_active_json_falls_back_to_base(frozen):
     assert runner.runtime_python("ytdlp") == frozen / "python" / PYTHON
 
 
-def test_frozen_missing_runtime_never_falls_back_to_self(frozen):
+def test_frozen_missing_runtime_never_falls_back_to_self(frozen, monkeypatch):
+    import shutil
+    monkeypatch.setattr(shutil, "which", lambda _: None)
     with pytest.raises(runner.WorkerRuntimeMissing):
         runner.default_worker_command("fake")
 
