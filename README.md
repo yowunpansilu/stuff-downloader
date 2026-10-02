@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/AlokaWarnakula/stuff-downloader/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/AlokaWarnakula/stuff-downloader"></a>
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS%20(soon)-blue">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS%20arm64-blue">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11-3776AB">
   <img alt="Qt" src="https://img.shields.io/badge/GUI-PyQt6-41CD52">
   <img alt="Tests" src="https://img.shields.io/badge/tests-1757%20passing-brightgreen">
@@ -85,14 +85,28 @@ These are real screenshots taken while downloading Blender's open movie *Big Buc
 Everything the app needs comes with it: FFmpeg, FFprobe, Deno and the Python engines. You don't
 have to install Python or anything else.
 
-### macOS
+### macOS (Apple Silicon — arm64)
 
-A macOS build is being worked on by a contributor and will be attached to a future release.
+**Option A — Direct download**
+
+1. Go to the [**latest release**](https://github.com/yowunpansilu/stuff-downloader/releases/latest).
+2. Download `StuffDownloader-1.2.0-macos-arm64.dmg`.
+3. Open the DMG, drag **StuffDownloader** to `/Applications`.
+4. On first launch, right-click the app → **Open** to bypass the Gatekeeper warning
+   (the app is ad-hoc signed, not notarised).
+
+**Option B — Homebrew**
+
+```sh
+brew install --cask yowunpansilu/stuff-downloader/stuff-downloader
+```
+
+Everything the app needs comes bundled: FFmpeg, FFprobe and Deno. You don't need to install Python or anything else.
 
 ## How to use it
 
 1. Copy a link from your browser or a share button.
-2. Click **Paste** (or press `Ctrl+V`), then **Analyze**.
+2. Click **Paste** (or press `Ctrl+V` on Windows, `Cmd+V` on macOS), then **Analyze**.
 3. Pick a **preset**. For playlists and albums, tick the items you want.
 4. Click **Download**. Files are saved to the folder shown under the link box. You can change
    it in **Settings**.
@@ -211,7 +225,7 @@ tests/         unit/, gui/ (pytest-qt + screenshots), convert/, network/ (opt-in
 - [x] Galleries (Instagram, X, Reddit…) via gallery-dl
 - [x] Spotify, Apple Music and Deezer links with no account needed
 - [x] In-app engine updates with self-test and rollback (**1.2.0**)
-- [ ] macOS build
+- [x] macOS build — arm64 DMG + Homebrew cask (**1.2.0**)
 - [ ] Faster failure on sites that block the connection (e.g. Reddit timeouts)
 
 ## Licenses and third-party source
