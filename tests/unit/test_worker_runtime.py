@@ -11,6 +11,9 @@ import pytest
 
 from stuff_downloader.core import runner
 
+SCRIPTS = "Scripts" if sys.platform == "win32" else "bin"
+PYTHON = "python.exe" if sys.platform == "win32" else "python3"
+
 
 def _touch(path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -36,8 +39,8 @@ def test_dev_uses_current_interpreter(monkeypatch):
 def test_dev_uses_installed_engine_env_for_real_engines_only(monkeypatch, tmp_path):
     monkeypatch.delattr(sys, "frozen", raising=False)
     monkeypatch.setenv(runner.RUNTIME_ENV_VAR, str(tmp_path))
-    env_python = _touch(tmp_path / "envs" / "ytdlp" / "2026.8.19-abc" / "Scripts" / "python.exe")
-    _touch(tmp_path / "python" / "python.exe")
+    env_python = _touch(tmp_path / "envs" / "ytdlp" / "2026.8.19-abc" / SCRIPTS / PYTHON)
+    _touch(tmp_path / "python" / PYTHON)
     (tmp_path / "active.json").write_text(
         json.dumps({"ytdlp": {"active": "2026.8.19-abc"}, "fake": {"active": "x"}}),
         encoding="utf-8",
@@ -71,34 +74,34 @@ def test_default_runtime_root_is_localappdata(monkeypatch, tmp_path):
 
 
 def test_frozen_without_active_env_uses_base_python(frozen):
-    python = _touch(frozen / "python" / "python.exe")
+    python = _touch(frozen / "python" / PYTHON)
     cmd = runner.default_worker_command("fake")
     assert cmd == [str(python), "-s", "-u", "-m", "stuff_downloader_worker"]
 
 
 def test_frozen_uses_active_engine_env(frozen):
-    _touch(frozen / "python" / "python.exe")
-    env_python = _touch(frozen / "envs" / "ytdlp" / "2026.8.19-abc" / "Scripts" / "python.exe")
+    _touch(frozen / "python" / PYTHON)
+    env_python = _touch(frozen / "envs" / "ytdlp" / "2026.8.19-abc" / SCRIPTS / PYTHON)
     (frozen / "active.json").write_text(
         json.dumps({"ytdlp": {"active": "2026.8.19-abc", "previous": None}}), encoding="utf-8"
     )
     assert runner.default_worker_command("ytdlp")[0] == str(env_python)
-    assert runner.default_worker_command("fake")[0] == str(frozen / "python" / "python.exe")
+    assert runner.default_worker_command("fake")[0] == str(frozen / "python" / PYTHON)
 
 
 @pytest.mark.parametrize("pointer", ["..", "..\\..\\evil", "a/b", "", 5, None])
 def test_tampered_active_pointer_is_ignored(frozen, pointer):
-    _touch(frozen / "python" / "python.exe")
+    _touch(frozen / "python" / PYTHON)
     (frozen / "active.json").write_text(
         json.dumps({"ytdlp": {"active": pointer}}), encoding="utf-8"
     )
-    assert runner.runtime_python("ytdlp") == frozen / "python" / "python.exe"
+    assert runner.runtime_python("ytdlp") == frozen / "python" / PYTHON
 
 
 def test_corrupt_active_json_falls_back_to_base(frozen):
-    _touch(frozen / "python" / "python.exe")
+    _touch(frozen / "python" / PYTHON)
     (frozen / "active.json").write_text("{not json", encoding="utf-8")
-    assert runner.runtime_python("ytdlp") == frozen / "python" / "python.exe"
+    assert runner.runtime_python("ytdlp") == frozen / "python" / PYTHON
 
 
 def test_frozen_missing_runtime_never_falls_back_to_self(frozen):
@@ -107,7 +110,7 @@ def test_frozen_missing_runtime_never_falls_back_to_self(frozen):
 
 
 def test_frozen_runtime_equal_to_gui_exe_is_rejected(frozen, monkeypatch):
-    python = _touch(frozen / "python" / "python.exe")
+    python = _touch(frozen / "python" / PYTHON)
     monkeypatch.setattr(sys, "executable", str(python))
     with pytest.raises(runner.WorkerRuntimeMissing):
         runner.default_worker_command("fake")
@@ -140,7 +143,7 @@ def test_dev_env_points_at_src(monkeypatch):
 
 def test_frozen_gallerydl_runs_in_its_own_env_never_the_ytdlp_one(frozen):
     """gallery-dl is GPLv2-only (plan §8.3): its worker must come from its own env."""
-    expected = _touch(frozen / "envs" / "gallerydl" / "1.32.13-bbbb" / "Scripts" / "python.exe")
+    expected = _touch(frozen / "envs" / "gallerydl" / "1.32.13-bbbb" / SCRIPTS / PYTHON)
     (frozen / "active.json").write_text(
         json.dumps(
             {

@@ -153,35 +153,39 @@ def test_worker_self_test_and_bad_spec():
 def test_the_social_engine_runs_in_the_ytdlp_env(tmp_path, monkeypatch):
     """R4: social has no env of its own; it needs the yt-dlp env's curl_cffi (plan §6)."""
     import json
+    import sys
 
     from stuff_downloader.core import runner
-
-    env = tmp_path / "envs" / "ytdlp" / "2026.8.19-abc" / "Scripts"
+    scripts = "Scripts" if sys.platform == "win32" else "bin"
+    python_bin = "python.exe" if sys.platform == "win32" else "python3"
+    env = tmp_path / "envs" / "ytdlp" / "2026.8.19-abc" / scripts
     env.mkdir(parents=True)
-    (env / "python.exe").write_bytes(b"")
+    (env / python_bin).write_bytes(b"")
     (tmp_path / "active.json").write_text(
         json.dumps({"ytdlp": {"active": "2026.8.19-abc"}}), encoding="utf-8"
     )
     monkeypatch.setenv(runner.RUNTIME_ENV_VAR, str(tmp_path))
     monkeypatch.setattr(runner, "is_frozen", lambda: True)
-    assert runner.default_worker_command("social")[0] == str(env / "python.exe")
+    assert runner.default_worker_command("social")[0] == str(env / python_bin)
     assert runner.default_worker_command("social") == runner.default_worker_command("ytdlp")
 
 
 def _runtime_with(tmp_path, monkeypatch, *engines):
     """A frozen app's runtime root where exactly ``engines`` have an active env."""
     import json
+    import sys
 
     from stuff_downloader.core import runner
-
+    scripts_dir = "Scripts" if sys.platform == "win32" else "bin"
+    python_bin = "python.exe" if sys.platform == "win32" else "python3"
     active = {}
     pythons = {}
     for engine in engines:
-        scripts = tmp_path / "envs" / engine / "1.0-abc" / "Scripts"
+        scripts = tmp_path / "envs" / engine / "1.0-abc" / scripts_dir
         scripts.mkdir(parents=True)
-        (scripts / "python.exe").write_bytes(b"")
+        (scripts / python_bin).write_bytes(b"")
         active[engine] = {"active": "1.0-abc"}
-        pythons[engine] = str(scripts / "python.exe")
+        pythons[engine] = str(scripts / python_bin)
     (tmp_path / "active.json").write_text(json.dumps(active), encoding="utf-8")
     monkeypatch.setenv(runner.RUNTIME_ENV_VAR, str(tmp_path))
     monkeypatch.setattr(runner, "is_frozen", lambda: True)
