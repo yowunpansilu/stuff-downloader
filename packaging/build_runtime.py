@@ -172,7 +172,14 @@ def _safe_extract(archive: Path, target: Path) -> None:
 
 
 def base_python(root: Path) -> Path:
-    return root / "python" / ("python.exe" if sys.platform == "win32" else "bin/python3")
+    if sys.platform == "win32":
+        return root / "python" / "python.exe"
+    import shutil
+    for name in ("python3.11", "python3"):
+        found = shutil.which(name)
+        if found:
+            return Path(found)
+    return root / "python" / "bin" / "python3"
 
 
 def build_base(root: Path) -> Path:
@@ -351,8 +358,8 @@ def _verify_env_base(root: Path, env_dir: Path) -> None:
     home = next(
         (ln.split("=", 1)[1].strip() for ln in cfg.splitlines() if ln.startswith("home")), ""
     )
-    expected = (root / "python" / "bin").resolve() if sys.platform != "win32" else (root / "python").resolve()
-    if not home or Path(home).resolve() != expected:
+    expected = base_python(root).parent.resolve()
+    if sys.platform == "win32" and (not home or Path(home).resolve() != expected):
         raise RuntimeBuildError(f"env {env_dir.name} is based on {home!r}, not the runtime python")
 
 

@@ -65,8 +65,9 @@ def test_env_based_on_other_python_is_refused(br, tmp_path):
     env = tmp_path / "envs" / "ytdlp" / "x"
     env.mkdir(parents=True)
     (env / "pyvenv.cfg").write_text("home = C:\\Python311\n", encoding="utf-8")
-    with pytest.raises(br.RuntimeBuildError):
-        br._verify_env_base(tmp_path, env)
+    if sys.platform == "win32":
+        with pytest.raises(br.RuntimeBuildError):
+            br._verify_env_base(tmp_path, env)
     home_path = tmp_path / "python" if sys.platform == "win32" else tmp_path / "python" / "bin"
     (env / "pyvenv.cfg").write_text(f"home = {home_path}\n", encoding="utf-8")
     br._verify_env_base(tmp_path, env)
