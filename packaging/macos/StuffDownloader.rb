@@ -4,7 +4,7 @@ cask "stuff-downloader" do
     sha256 :no_check # TODO: Replace with the actual intel DMG sha256 once built
     url "https://github.com/AlokaWarnakula/stuff-downloader/releases/download/v#{version}/StuffDownloader-#{version}-macos-x86_64.dmg"
   else
-    sha256 "a16d573d2ac3db247438b257deb13577e72652e23ccf1467ca040db6cd0fa7f8"
+    sha256 "974093e7bca4edea81c8853d7b97194ba8d8d2418c44ba0be6006e3bfbd2bc38"
     url "https://github.com/AlokaWarnakula/stuff-downloader/releases/download/v#{version}/StuffDownloader-#{version}-macos-arm64.dmg"
   end
 
