@@ -57,7 +57,8 @@ PROJECT = HERE.parent
 REQS = HERE / "engine-requirements"
 DEFAULT_OUT = PROJECT / "dist" / "payload"
 CACHE = PROJECT / "build" / "payload-cache"
-SPEC = HERE / "StuffDownloader.spec"
+import sys
+SPEC = HERE / ("StuffDownloader_mac.spec" if sys.platform == "darwin" else "StuffDownloader.spec")
 ISS = HERE / "installer.iss"
 
 # (engine, requirements file) in install order: the previous yt-dlp first, so that installing the
