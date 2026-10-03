@@ -762,18 +762,39 @@ class MainWindow(QMainWindow):
             python_exe = setup_dir / "python" / "python.exe"
         else:
             import shutil
+            import os
+            # GUI apps on macOS don't inherit shell PATH, so add Homebrew paths explicitly
+            env_path = os.environ.get("PATH", "")
+            for brew_path in ("/opt/homebrew/bin", "/usr/local/bin"):
+                if brew_path not in env_path:
+                    env_path = f"{brew_path}:{env_path}"
+            os.environ["PATH"] = env_path
+            
             found = shutil.which("python3.11") or shutil.which("python3")
             if not found:
                 log.error("Could not find python3.11 or python3 on the system.")
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.critical(self, "Python Missing", "Could not find python3.11 or python3 on the system.\nPlease install Python 3.11 via Homebrew.")
                 progress.close()
                 return
             python_exe = Path(found)
             
         script = setup_dir / "packaging" / "build_installer.py"
         try:
-            subprocess.run([str(python_exe), str(script), "setup-runtime"], check=True)
+            result = subprocess.run(
+                [str(python_exe), str(script), "setup-runtime"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            log_file = Path.home() / "stuff-downloader-setup.log"
+            log_file.write_text(f"SUCCESS\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}", encoding="utf-8")
         except subprocess.CalledProcessError as e:
             log.error(f"First-time setup failed: {e}")
+            log_file = Path.home() / "stuff-downloader-setup.log"
+            log_file.write_text(f"FAILED\nSTDOUT:\n{e.stdout}\nSTDERR:\n{e.stderr}", encoding="utf-8")
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Setup Failed", f"First time setup failed.\nLog written to:\n{log_file}")
 
         progress.close()
 
