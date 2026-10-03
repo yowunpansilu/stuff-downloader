@@ -758,8 +758,17 @@ class MainWindow(QMainWindow):
         # Run setup synchronously for now to keep it simple, processEvents to keep UI alive
         QGuiApplication.processEvents()
 
-        bin_name = "python.exe" if sys.platform == "win32" else "bin/python3"
-        python_exe = setup_dir / "python" / bin_name
+        if sys.platform == "win32":
+            python_exe = setup_dir / "python" / "python.exe"
+        else:
+            import shutil
+            found = shutil.which("python3.11") or shutil.which("python3")
+            if not found:
+                log.error("Could not find python3.11 or python3 on the system.")
+                progress.close()
+                return
+            python_exe = Path(found)
+            
         script = setup_dir / "packaging" / "build_installer.py"
         try:
             subprocess.run([str(python_exe), str(script), "setup-runtime"], check=True)
