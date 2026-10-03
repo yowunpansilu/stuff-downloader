@@ -137,7 +137,15 @@ def check_inputs(tools_dir: Path) -> None:
             raise PayloadError(f"{name} is missing")
     if not SPEC.is_file():
         raise PayloadError(f"{SPEC} is missing")
+    import platform
     fetch_tools = _load("fetch_tools")
+    if sys.platform == "win32":
+        plat = "windows_x64"
+    elif sys.platform == "darwin":
+        plat = "macos_arm64" if platform.machine() == "arm64" else "macos_x86_64"
+    else:
+        plat = "linux_x64"
+    fetch_tools.SOURCES, fetch_tools.STAGED, fetch_tools.EXECUTABLES = fetch_tools.load_manifest(plat)
     try:
         fetch_tools.verify_staged(tools_dir)
     except fetch_tools.ToolError as exc:
@@ -158,9 +166,18 @@ def check_inputs(tools_dir: Path) -> None:
 
 def check_onedir(app_dir: Path, tools_dir_in_app: Path) -> None:
     """The frozen GUI must hold the verified tools and none of the engine packages."""
-    if not (app_dir / "StuffDownloader.exe").is_file():
-        raise PayloadError(f"PyInstaller produced no {app_dir / 'StuffDownloader.exe'}")
+    exe_name = "StuffDownloader.exe" if sys.platform == "win32" else "StuffDownloader"
+    if not (app_dir / exe_name).is_file():
+        raise PayloadError(f"PyInstaller produced no {app_dir / exe_name}")
+    import platform
     fetch_tools = _load("fetch_tools")
+    if sys.platform == "win32":
+        plat = "windows_x64"
+    elif sys.platform == "darwin":
+        plat = "macos_arm64" if platform.machine() == "arm64" else "macos_x86_64"
+    else:
+        plat = "linux_x64"
+    fetch_tools.SOURCES, fetch_tools.STAGED, fetch_tools.EXECUTABLES = fetch_tools.load_manifest(plat)
     try:
         fetch_tools.verify_staged(tools_dir_in_app)
     except fetch_tools.ToolError as exc:
@@ -202,6 +219,8 @@ def _find_tools_dir(app_dir: Path) -> Path:
 
 def stage_python(setup: Path) -> None:
     """The pinned CPython, downloaded once into the cache and checked on every use."""
+    if sys.platform != "win32":
+        return
     build_runtime = _load("build_runtime")
     CACHE.mkdir(parents=True, exist_ok=True)
     archive = CACHE / "cpython.tar.gz"
@@ -288,11 +307,12 @@ def setup_runtime(root: Path | None = None, with_spotdl: bool = False) -> dict[s
     root = (root or build_runtime.default_root()).resolve()
     setup = PROJECT
     wheels = setup / "wheels"
-    if not wheels.is_dir() or not (setup / "python" / "python.exe").is_file():
+    if not wheels.is_dir() or (sys.platform == "win32" and not (setup / "python" / "python.exe").is_file()):
         raise PayloadError(f"{setup} is not a staged runtime-setup folder")
     if not build_runtime.base_python(root).is_file():
         root.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(setup / "python", root / "python")
+        if sys.platform == "win32":
+            shutil.copytree(setup / "python", root / "python")
     build_runtime.build_base(root)
     # pip reads these: no index, only the staged wheels. --require-hashes still applies.
     # A file: URL, because pip splits PIP_FIND_LINKS on whitespace and install paths have spaces.

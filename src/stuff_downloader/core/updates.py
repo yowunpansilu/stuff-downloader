@@ -280,7 +280,10 @@ def check(
             )
             if offered or blocked:
                 offers.append(Offer(engine, name, version, offered, name in ALWAYS_LATEST, blocked))
-    reached = any(answer is not None for answer in answers.values())
+    if not answers:
+        reached = True
+    else:
+        reached = any(answer is not None for answer in answers.values())
     return CheckResult(offers, installed_by_engine, reached)
 
 
