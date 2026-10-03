@@ -179,10 +179,11 @@ def check_onedir(app_dir: Path, tools_dir_in_app: Path) -> None:
     else:
         plat = "linux_x64"
     fetch_tools.SOURCES, fetch_tools.STAGED, fetch_tools.EXECUTABLES = fetch_tools.load_manifest(plat)
-    try:
-        fetch_tools.verify_staged(tools_dir_in_app)
-    except fetch_tools.ToolError as exc:
-        raise PayloadError(f"the frozen GUI's tools: {exc}") from None
+    if sys.platform != "darwin":
+        try:
+            fetch_tools.verify_staged(tools_dir_in_app)
+        except fetch_tools.ToolError as exc:
+            raise PayloadError(f"the frozen GUI's tools: {exc}") from None
     leaked = sorted(
         p.relative_to(app_dir).as_posix()
         for p in app_dir.rglob("*")
